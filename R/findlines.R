@@ -36,14 +36,14 @@ cluster_grouping <-function(d,cluster,tolerance, FUN="max", is.rounded=TRUE){
   return(groups)
 }
 merge_lines <- function(xlines, tolerance=2){
-
+  
   #return if only one member
   if(NROW(xlines)<2)return(xlines)
   # cluster along start and end lines
   d <- na.omit(unique(xlines$end));
   # if less than two, no clustering
   if(NROW(d)<2)return(xlines)
-
+  
   # run clutering
   cluster <- hclust(dist(d))
   d1 <- cluster_grouping(d,cluster,2*tolerance, FUN="max",FALSE)
@@ -53,7 +53,7 @@ merge_lines <- function(xlines, tolerance=2){
   cluster <- hclust(dist(d))
   d1 <- cluster_grouping(d,cluster,2*tolerance, FUN="min",FALSE)
   starttag <- d1[match(xlines$start,d)]
-
+  
   #merge same start and end points based on score
   xlines$key <- paste(starttag,"-",endtag)
   keys <- unique(xlines$key)
@@ -69,36 +69,36 @@ merge_lines <- function(xlines, tolerance=2){
   })
   xlines$key <- NULL
   xlines <- xlines[xlines$r != 0,]
-
+  
   return(xlines)
 }
 filter_lines <- function(xlines, imppts, flag=1, ptheta=0.25, pscore=0.3,
                          pfit=0.95, nsize=10, nlines=10){
-
+  
   # nothing to do if no lines found
   if(NROW(xlines)<1)return(xlines)
-
+  
   # compute the slope...
   #if(flag==1){
-    #xlines$xtheta <- (180/pi)*atan((as.numeric(imppts$maxima$value[xlines$end]) - as.numeric(imppts$maxima$value[xlines$start]))
-    #                      /(as.numeric(imppts$maxima$pos[xlines$end]) - as.numeric(imppts$maxima$pos[xlines$start])))
+  #xlines$xtheta <- (180/pi)*atan((as.numeric(imppts$maxima$value[xlines$end]) - as.numeric(imppts$maxima$value[xlines$start]))
+  #                      /(as.numeric(imppts$maxima$pos[xlines$end]) - as.numeric(imppts$maxima$pos[xlines$start])))
   #} else{
-    #xlines$xtheta <- (180/pi)*atan((as.numeric(imppts$minima$value[xlines$end]) - as.numeric(imppts$minima$value[xlines$start]))
-    #                      /(as.numeric(imppts$minima$pos[xlines$end]) - as.numeric(imppts$minima$pos[xlines$start])))
+  #xlines$xtheta <- (180/pi)*atan((as.numeric(imppts$minima$value[xlines$end]) - as.numeric(imppts$minima$value[xlines$start]))
+  #                      /(as.numeric(imppts$minima$pos[xlines$end]) - as.numeric(imppts$minima$pos[xlines$start])))
   #}
   xlines$xtheta <- xlines$theta - 90
   # ... and eliminate near-vertical lines
   if(!is.na(ptheta)){
     xlines <- xlines[techchart_abs(cos(xlines$xtheta*pi/180))>ptheta,]
   }
-
+  
   # return if too few lines left
   if(NROW(xlines)<1)return(xlines)
   if(NROW(xlines)<nlines){
     xlines <- xlines[with(xlines, order(-end,score,-fit)),]
     return(xlines)
   }
-
+  
   # check if envelop score is acceptable
   if(!is.na(pscore)){
     cutoffscore <- as.numeric(stats::quantile(unique(xlines$score), pscore))
@@ -112,7 +112,7 @@ filter_lines <- function(xlines, imppts, flag=1, ptheta=0.25, pscore=0.3,
     xlines <- xlines[with(xlines, order(-end,score,-fit)),]
     return(xlines)
   }
-
+  
   # check if fit score is acceptable
   if(!is.na(pfit)){
     tmplines <- xlines[xlines$fit > pfit,]
@@ -125,7 +125,7 @@ filter_lines <- function(xlines, imppts, flag=1, ptheta=0.25, pscore=0.3,
     xlines <- xlines[with(xlines, order(-end,score,-fit)),]
     return(xlines)
   }
-
+  
   # finally filter based on size
   if(!is.na(nsize)){
     s1 <- as.numeric(imppts$maxima$pos)[xlines$end]
@@ -147,15 +147,15 @@ filter_lines <- function(xlines, imppts, flag=1, ptheta=0.25, pscore=0.3,
     xlines <- xlines[with(xlines, order(-end,score,-fit)),]
     return(xlines)
   }
-
+  
   # enough lines left, sort, cut and return
   xlines <- xlines[with(xlines, order(-end,score,-fit)),]
   xlines <- xlines[1:nlines,]
-
+  
   return(xlines)
 }
 hough_lines <- function(x, flag, r.tol=0.02, theta.tol=1, s=2){
-
+  
   rbucket <- seq(-1.42,1.42,r.tol); abucket <- seq(1,180,theta.tol)
   xlines <- houghtransform(range01(x$x),range01(x$y),flag,rbucket, abucket,s)
   xlines$r <- rbucket[xlines$r+1]; xlines$theta <- abucket[xlines$theta+1]
@@ -185,13 +185,13 @@ find_lines <- function(x, tolerance=2, nlines=10, pfit=NA, pscore=NA,
   if(xts::is.xts(x)){
     if.xts <- T
   }
-
+  
   # find the important points and switch to 1 unit square map
   imppts <- find.imppoints(x,tolerance)
   xmin <- imppts$minima; xmax <- imppts$maxima
   xmin <- data.frame(x=as.numeric(zoo::coredata(xmin$pos)),y=as.numeric(zoo::coredata(xmin$value)))
   xmax <- data.frame(x=as.numeric(zoo::coredata(xmax$pos)),y=as.numeric(zoo::coredata(xmax$value)))
-
+  
   # start with min points, find lines and merge and filter
   minlines <- hough_lines(xmin,-1,r.tol,theta.tol,s)
   if(NROW(minlines)>1){
@@ -203,7 +203,7 @@ find_lines <- function(x, tolerance=2, nlines=10, pfit=NA, pscore=NA,
   if(NROW(minlines)>1){
     minlines <- filter_lines(minlines,imppts, -1,nlines=nlines, pfit = pfit, pscore = pscore)
   }
-
+  
   # now same with max points
   maxlines <- hough_lines(xmax,1,r.tol,theta.tol,s)
   if(NROW(maxlines)>1){
@@ -215,16 +215,16 @@ find_lines <- function(x, tolerance=2, nlines=10, pfit=NA, pscore=NA,
   if(NROW(maxlines)>1){
     maxlines <- filter_lines(maxlines,imppts, 1,nlines=nlines, pfit = pfit, pscore = pscore)
   }
-
+  
   # build the return object
   xlines <- list()
   xlines$imppts <- imppts
   xlines$maxlist <- maxlines
   xlines$minlist <- minlines
-
+  
   # compute the lines for plot for minima points...
   minlist <- list()
-
+  
   if(NROW(minlines)>0){
     for(i in 1:NROW(minlines)){
       r <- minlines$r[i]
@@ -246,7 +246,7 @@ find_lines <- function(x, tolerance=2, nlines=10, pfit=NA, pscore=NA,
       minlist[[i]] <- na.omit(xts::as.xts(z$y,idx))
     }
   }
-
+  
   # and for maxima points...
   maxlist <- list()
   if(NROW(maxlines)>0){
@@ -270,23 +270,23 @@ find_lines <- function(x, tolerance=2, nlines=10, pfit=NA, pscore=NA,
       maxlist[[i]] <- na.omit(xts::as.xts(z$y,idx))
     }
   }
-
+  
   xlines$maxlines <- maxlist
   xlines$minlines <- minlist
-
+  
   # we are done
   return(xlines)
 }
 
 find.lines <- function(x, tolerance=1.5, n=3, pscore=(0.05)^2, pfit=0.85,
-                            force.one=!return.all, return.all=FALSE){
-
+                       force.one=!return.all, return.all=FALSE){
+  
   last.idx <- zoo::index(x)[NROW(x)]
-
+  
   # get the lines
   xlines <- find_lines(x,tolerance,n)
   if(return.all)return(xlines)
-
+  
   # find the best fit max line
   if(NROW(xlines$maxlist)>0){
     nn <- NROW(xlines$maxlist)
@@ -296,7 +296,7 @@ find.lines <- function(x, tolerance=1.5, n=3, pscore=(0.05)^2, pfit=0.85,
     for(i in 1:nn){
       idx <- NROW(xlines$maxlines[[i]])
       b_ending <- zoo::index(xlines$maxlines[[i]])[idx] == last.idx
-      b_pos <- b_ending & abs(xlines$maxlist$end[i] - max(xlines$maxlist$end)) < 3
+      b_pos <- b_ending & techchart_abs(xlines$maxlist$end[i] - max(xlines$maxlist$end)) < 3
       b_score <- xlines$maxlist$score[i] == min(xlines$maxlist$score) |
         xlines$maxlist$score[i] < pscore
       b_fit <- xlines$maxlist$fit[i] == min(xlines$maxlist$fit) |
@@ -319,7 +319,7 @@ find.lines <- function(x, tolerance=1.5, n=3, pscore=(0.05)^2, pfit=0.85,
         idx <- which(xlines$maxlist[idx,]$strength
                      ==max(xlines$maxlist[idx,]$strength))
       }
-
+      
       if(NROW(idx)>1)idx <- idx[1]
     }
     idx2 <- which(scorecard$mid==TRUE)
@@ -334,7 +334,7 @@ find.lines <- function(x, tolerance=1.5, n=3, pscore=(0.05)^2, pfit=0.85,
       xlines$maxlines <- list()
     }
   }
-
+  
   # now repeat for minima
   if(NROW(xlines$minlist)>0){
     nn <- NROW(xlines$minlist)
@@ -344,7 +344,7 @@ find.lines <- function(x, tolerance=1.5, n=3, pscore=(0.05)^2, pfit=0.85,
     for(i in 1:nn){
       idx <- NROW(xlines$minlines[[i]])
       b_ending <- zoo::index(xlines$minlines[[i]])[idx] == last.idx
-      b_pos <- b_ending & abs(xlines$minlist$end[i] - max(xlines$minlist$end)) < 2
+      b_pos <- b_ending & techchart_abs(xlines$minlist$end[i] - max(xlines$minlist$end)) < 2
       b_score <- xlines$minlist$score[i] == min(xlines$minlist$score) |
         xlines$minlist$score[i] < pscore
       b_fit <- xlines$minlist$fit[i] == min(xlines$minlist$fit) |
@@ -367,7 +367,7 @@ find.lines <- function(x, tolerance=1.5, n=3, pscore=(0.05)^2, pfit=0.85,
         idx <- which(xlines$minlist[idx,]$strength==
                        max(xlines$minlist[idx,]$strength))
       }
-
+      
       if(NROW(idx)>1)idx <- idx[1]
     }
     idx2 <- which(scorecard$mid==TRUE)
@@ -382,10 +382,10 @@ find.lines <- function(x, tolerance=1.5, n=3, pscore=(0.05)^2, pfit=0.85,
       xlines$minlines <- list()
     }
   }
-
+  
   #done, return the lines
   return(xlines)
-
+  
 }
 
 #' Find most current enveloping lines of a given time series
@@ -406,14 +406,14 @@ find.lines <- function(x, tolerance=1.5, n=3, pscore=(0.05)^2, pfit=0.85,
 #' @seealso \code{\link[techchart]{find_lines}}
 #' @export
 find.tchannel <- function(x, tolerance=1.5, n=3, pscore=(0.05)^2,
-                               pfit=0.85){
-
+                          pfit=0.85){
+  
   if(!xts::is.xts(x))stop("expected xts object")
   if(!quantmod::is.OHLC(x)){
     x <- merge(x[,1],x[,1],x[,1],x[,1])
     colnames(x) <- c("open","high","low","close")
   }
-
+  
   try(xlines <- find.lines(x, tolerance, pscore, pfit, force.one = TRUE))
   tchannel <- list()
   tchannel$xlines <- NA
@@ -431,17 +431,17 @@ find.tchannel <- function(x, tolerance=1.5, n=3, pscore=(0.05)^2,
   tchannel$strength <- NA
   tchannel$fit <- NA
   class(tchannel) <- "tchannel"
-
+  
   if(NROW(xlines$maxlist)<1 | NROW(xlines$minlist)<1){
     warning("no envelopes found, try changing the tolerance, increasing n or pscore or reducing pfit")
     return(tchannel)
   }
-
+  
   if(NROW(xlines$maxlines[[1]]) <2 |NROW(xlines$minlines[[1]]) <2 ){
     warning("no envelopes found, try changing the tolerance, increasing n or pscore or reducing pfit")
     return(tchannel)
   }
-
+  
   last.maxday <- zoo::index(xlines$maxlines[[1]])[NROW(xlines$maxlines[[1]])]
   last.minday <- zoo::index(xlines$minlines[[1]])[NROW(xlines$minlines[[1]])]
   last.day <- zoo::index(x)[NROW(x)]
@@ -449,61 +449,61 @@ find.tchannel <- function(x, tolerance=1.5, n=3, pscore=(0.05)^2,
     warning("no envelopes found, try changing the tolerance, increasing n or pscore or reducing pfit")
     return(tchannel)
   }
-
+  
   maxx <- as.numeric(xlines$maxlines[[1]][NROW(xlines$maxlines[[1]])])
   minx <- as.numeric(xlines$minlines[[1]][NROW(xlines$minlines[[1]])])
   if(maxx < minx)return(tchannel)
-
+  
   idx <- max(zoo::index(xlines$maxlines[[1]])[1],zoo::index(xlines$minlines[[1]])[1])
   max0 <- as.numeric(xlines$maxlines[[1]][idx])
   min0 <- as.numeric(xlines$minlines[[1]][idx])
   if(max0 < min0)return(tchannel)
-
+  
   startdev <- 100*(max0/min0-1)
   enddev <- 100*(maxx/minx-1)
   vol <- sd(na.omit(TTR::ROC(quantmod::Cl(x)))); tol <- 0.25*vol
   duration <- min(NROW(xlines$maxlines[[1]]),NROW(xlines$minlines[[1]]))
   duration <- duration/(NROW(x))
-
+  
   #find the channel type and direction
-  if(startdev > enddev & abs(startdev-enddev)>(100*tol)){
+  if(startdev > enddev & techchart_abs(startdev-enddev)>(100*tol)){
     tchannel$name <- "triangle"
-  } else if(startdev < enddev & abs(startdev-enddev)>(100*tol)){
+  } else if(startdev < enddev & techchart_abs(startdev-enddev)>(100*tol)){
     tchannel$name <- "megaphone"
   } else{
     tchannel$name <- "channel"
   }
-
+  
   startmean <- 0.5*(min0+max0)
   endmean <- 0.5*(minx+maxx)
-
-  if(startmean < endmean & abs(endmean/startmean-1)>tol ){
+  
+  if(startmean < endmean & techchart_abs(endmean/startmean-1)>tol ){
     tchannel$dir <- 1
-  } else if(startmean > endmean & abs(endmean/startmean-1)>tol){
+  } else if(startmean > endmean & techchart_abs(endmean/startmean-1)>tol){
     tchannel$dir <- -1
   } else{
     tchannel$dir <- 0
   }
-
+  
   # add the lines data
   tchannel$xlines <- xlines
   tchannel$midlinemove <- endmean/startmean
   tchannel$minlinemove <- minx/min0
   tchannel$maxlinemove <- maxx/max0
-
+  
   #find the limiting points
   tchannel$upperlimit <- maxx
   tchannel$lowerlimit <- minx
   tchannel$duration <- duration
-
+  
   #aesthetic parameters
   tchannel$length <- max(NROW(xlines$maxlines[[1]])/NROW(xlines$minlines[[1]]),
-                              NROW(xlines$minlines[[1]])/NROW(xlines$maxlines[[1]]))
+                         NROW(xlines$minlines[[1]])/NROW(xlines$maxlines[[1]]))
   tchannel$aspectratio <- max((maxx-minx)/(max0-min0),(max0-min0)/(maxx-minx))
   tchannel$score <- max(tchannel$xlines$maxlist$score[1],tchannel$xlines$minlist$score[1])
   tchannel$strength <- min(tchannel$xlines$maxlist$strength[1],tchannel$xlines$minlist$strength[1])
   tchannel$fit <- min(tchannel$xlines$maxlist$fit[1],tchannel$xlines$minlist$fit[1])
-
+  
   return(tchannel)
 }
 
