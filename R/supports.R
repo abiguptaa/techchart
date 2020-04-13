@@ -61,7 +61,7 @@ find.minima <- function(x, tolerance, lookback=20){
   n <- NROW(x)
   y <- data.frame(rep(1,n),rep(0,n), rep(0,n))
   i.min <- i.y <- 1
-
+  
   if(tolerance > 1 & quantmod::is.OHLC(x)){
     threshold <- TTR::ATR(quantmod::HLC(x),n=lookback)$atr/quantmod::Cl(x)
     threshold[is.na(threshold)] <- na.omit(threshold)[1]
@@ -75,7 +75,7 @@ find.minima <- function(x, tolerance, lookback=20){
   } else{
     stop("tolerance is not valid for data")
   }
-
+  
   threshold <- (1+threshold)
   if(quantmod::is.OHLC(x)){
     x.min <- apply(merge(quantmod::Cl(x),quantmod::Op(x)),1,min)
@@ -83,10 +83,10 @@ find.minima <- function(x, tolerance, lookback=20){
   } else{
     x.min <- x.max <- as.matrix(x)[,1]
   }
-
+  
   y <- data.frame(findminima(as.numeric(x.min),as.numeric(x.max),threshold))
   y <- y[which(y[,2]!=0),]
-
+  
   colnames(y) <- c("pos","sign")
   y$pos <- y$pos+1
   y$value <- as.numeric(x.min)[y$pos]
@@ -96,7 +96,7 @@ find.maxima <- function(x, tolerance, lookback=20){
   n <- NROW(x)
   y <- data.frame(rep(1,n),rep(0,n), rep(0,n))
   i.min <- i.y <- 1
-
+  
   if(tolerance > 1 & quantmod::is.OHLC(x)){
     threshold <- TTR::ATR(quantmod::HLC(x),n=lookback)$atr/quantmod::Cl(x)
     threshold[is.na(threshold)] <- na.omit(threshold)[1]
@@ -110,7 +110,7 @@ find.maxima <- function(x, tolerance, lookback=20){
   } else{
     stop("tolerance is not valid for data. Variable tolerance allowed only for xts input")
   }
-
+  
   threshold <- (1+threshold)
   if(quantmod::is.OHLC(x)){
     x.min <- apply(merge(quantmod::Cl(x),quantmod::Op(x)),1,min)
@@ -118,7 +118,7 @@ find.maxima <- function(x, tolerance, lookback=20){
   } else{
     x.min <- x.max <- as.matrix(x)[,1]
   }
-
+  
   y <- data.frame(findmaxima(as.numeric(x.min),as.numeric(x.max),threshold))
   y <- y[which(y[,2]!=0),]
   colnames(y) <- c("pos","sign")
@@ -145,7 +145,7 @@ find.imppoints <- function(x, tolerance=0.02, lookback=20){
   z2 <- find.maxima(x, tolerance, lookback)
   z <- rbind(z1,z2)
   z <- z[order(z$pos),]
-
+  
   for(i in 1:5){
     if(!checkoptimapos(as.numeric(z$pos))){
       sign_x <- sortoptimaposition(as.numeric(z$pos),as.numeric(z$sign),
@@ -163,7 +163,7 @@ find.imppoints <- function(x, tolerance=0.02, lookback=20){
   rownames(z) <- seq(1:NROW(z))
   pts <- list()
   pts$data <- x
-
+  
   if(xts::is.xts(x)){
     z <- xts::as.xts(z,zoo::index(x)[z$pos])
     data <- data.frame(pos=z$pos[which(z$sign==1)],value=z$value[which(z$sign==1)])
@@ -283,7 +283,7 @@ find.supports <- function(x, tolerance=0.02, strength=3, maxline=10,lookback=20)
   clusters <- stats::hclust(dist(optima$results$value))
   sups <- merge_levels(optima$results$value,clusters,tolerance,strength)
   if(NROW(sups)<1)stop("no supports found, try reducing strength parameter")
-
+  
   if(xts::is.xts(x)){
     if(quantmod::is.OHLC(x)){
       lastval <-as.numeric(quantmod::Cl(x)[NROW(x)])
@@ -293,15 +293,15 @@ find.supports <- function(x, tolerance=0.02, strength=3, maxline=10,lookback=20)
   }else{
     lastval <- as.matrix(x)[NROW(x),1]
   }
-
-  sups$dist <- techchart_abs(sups$value - lastval)
+  
+  sups$dist <- abs(sups$value - lastval)
   if(NROW(sups) > maxline){
     sups <- sups[order(sups$dist),]
     sups <- sups[1:maxline,]
   }
   sups <- sups[,1:2]
   rownames(sups) <- seq(1:NROW(sups))
-
+  
   suplines <- list()
   for(i in 1:NROW(sups)){
     if(xts::is.xts(x)){
@@ -310,14 +310,14 @@ find.supports <- function(x, tolerance=0.02, strength=3, maxline=10,lookback=20)
       suplines[[i]] <- data.frame(x=zoo::index(x), y=rep(sups$value[i],NROW(x)))
     }
   }
-
+  
   supports <- list()
   supports$lastpoint <- lastval
   supports$data <- x
   supports$results <- sups
   supports$lines <- suplines
   class(supports) <- "supports"
-
+  
   return(supports)
 }
 
@@ -343,7 +343,7 @@ find.pivots <- function(x, type=c("SR","FIB"), tolerance=0.02, strength=3, maxli
   if(type=="SR"){
     return(find.supports(x,tolerance,strength,maxline))
   }
-
+  
   lastval <- 0
   if(xts::is.xts(x)){
     if(quantmod::is.OHLC(x)){
@@ -354,19 +354,19 @@ find.pivots <- function(x, type=c("SR","FIB"), tolerance=0.02, strength=3, maxli
   }else{
     lastval <- as.matrix(x)[NROW(x),1]
   }
-
+  
   imppts <- find.imppoints(x,tolerance)
   xmax <- max(lastval,imppts$results$value)
   xmin <- min(lastval,imppts$results$value)
   xrange <- xmax - xmin
   levels <- rep(0,6)
-
+  
   levels[1]<-xmin; levels[2]<-levels[1]+0.236*xrange; levels[3]<-levels[1]+0.382*xrange;
   levels[4]<-levels[1]+0.5*xrange; levels[5]<-levels[1]+0.618*xrange; levels[6]<-xmax;
-
+  
   sups <- data.frame(levels, rep(1,6))
   colnames(sups) <- c("value","strength")
-
+  
   suplines <- list()
   for(i in 1:6){
     if(xts::is.xts(x)){
@@ -375,14 +375,14 @@ find.pivots <- function(x, type=c("SR","FIB"), tolerance=0.02, strength=3, maxli
       suplines[[i]] <- data.frame(x=zoo::index(x), y=rep(levels[i],NROW(x)))
     }
   }
-
+  
   supports <- list()
   supports$lastpoint <- lastval
   supports$data <- x
   supports$results <- sups
   supports$lines <- suplines
   class(supports) <- "supports"
-
+  
   return(supports)
 }
 
