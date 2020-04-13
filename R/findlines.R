@@ -89,7 +89,7 @@ filter_lines <- function(xlines, imppts, flag=1, ptheta=0.25, pscore=0.3,
   xlines$xtheta <- xlines$theta - 90
   # ... and eliminate near-vertical lines
   if(!is.na(ptheta)){
-    xlines <- xlines[techchart_abs(cos(xlines$xtheta*pi/180))>ptheta,]
+    xlines <- xlines[abs(cos(xlines$xtheta*pi/180))>ptheta,]
   }
   
   # return if too few lines left
@@ -296,7 +296,7 @@ find.lines <- function(x, tolerance=1.5, n=3, pscore=(0.05)^2, pfit=0.85,
     for(i in 1:nn){
       idx <- NROW(xlines$maxlines[[i]])
       b_ending <- zoo::index(xlines$maxlines[[i]])[idx] == last.idx
-      b_pos <- b_ending & techchart_abs(xlines$maxlist$end[i] - max(xlines$maxlist$end)) < 3
+      b_pos <- b_ending & abs(xlines$maxlist$end[i] - max(xlines$maxlist$end)) < 3
       b_score <- xlines$maxlist$score[i] == min(xlines$maxlist$score) |
         xlines$maxlist$score[i] < pscore
       b_fit <- xlines$maxlist$fit[i] == min(xlines$maxlist$fit) |
@@ -344,7 +344,7 @@ find.lines <- function(x, tolerance=1.5, n=3, pscore=(0.05)^2, pfit=0.85,
     for(i in 1:nn){
       idx <- NROW(xlines$minlines[[i]])
       b_ending <- zoo::index(xlines$minlines[[i]])[idx] == last.idx
-      b_pos <- b_ending & techchart_abs(xlines$minlist$end[i] - max(xlines$minlist$end)) < 2
+      b_pos <- b_ending & abs(xlines$minlist$end[i] - max(xlines$minlist$end)) < 2
       b_score <- xlines$minlist$score[i] == min(xlines$minlist$score) |
         xlines$minlist$score[i] < pscore
       b_fit <- xlines$minlist$fit[i] == min(xlines$minlist$fit) |
@@ -466,9 +466,9 @@ find.tchannel <- function(x, tolerance=1.5, n=3, pscore=(0.05)^2,
   duration <- duration/(NROW(x))
   
   #find the channel type and direction
-  if(startdev > enddev & techchart_abs(startdev-enddev)>(100*tol)){
+  if(startdev > enddev & abs(startdev-enddev)>(100*tol)){
     tchannel$name <- "triangle"
-  } else if(startdev < enddev & techchart_abs(startdev-enddev)>(100*tol)){
+  } else if(startdev < enddev & abs(startdev-enddev)>(100*tol)){
     tchannel$name <- "megaphone"
   } else{
     tchannel$name <- "channel"
@@ -477,9 +477,9 @@ find.tchannel <- function(x, tolerance=1.5, n=3, pscore=(0.05)^2,
   startmean <- 0.5*(min0+max0)
   endmean <- 0.5*(minx+maxx)
   
-  if(startmean < endmean & techchart_abs(endmean/startmean-1)>tol ){
+  if(startmean < endmean & abs(endmean/startmean-1)>tol ){
     tchannel$dir <- 1
-  } else if(startmean > endmean & techchart_abs(endmean/startmean-1)>tol){
+  } else if(startmean > endmean & abs(endmean/startmean-1)>tol){
     tchannel$dir <- -1
   } else{
     tchannel$dir <- 0
