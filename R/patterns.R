@@ -18,10 +18,10 @@ pattern.db <- function(type="all"){
                      R <- fit$residuals; R <- R+E1;
                      if(!tchart.trend.adjusted){R <- c(E1,E2,E3,E4,E5)};
                      (R[1] > R[2]) & (R[5] > R[4]) & (R[3] > R[1]) & (R[3] > R[5]) &
-                     techchart_abs(R[1] - (R[1]+R[5])/2) < tolerance * (R[1]+R[5])/2 &
-                     techchart_abs(R[5] - (R[1]+R[5])/2) < tolerance * (R[1]+R[5])/2 &
-                     techchart_abs(R[2] - (R[2]+R[4])/2) < tolerance * (R[2]+R[4])/2 &
-                     techchart_abs(R[4] - (R[2]+R[4])/2) < tolerance * (R[2]+R[4])/2
+                     abs(R[1] - (R[1]+R[5])/2) < tolerance * (R[1]+R[5])/2 &
+                     abs(R[5] - (R[1]+R[5])/2) < tolerance * (R[1]+R[5])/2 &
+                     abs(R[2] - (R[2]+R[4])/2) < tolerance * (R[2]+R[4])/2 &
+                     abs(R[4] - (R[2]+R[4])/2) < tolerance * (R[2]+R[4])/2
                      ")
   length <- 5
   start <- 1
@@ -39,10 +39,10 @@ pattern.db <- function(type="all"){
                      R <- fit$residuals; R <- R+E1;
                      if(!tchart.trend.adjusted){R <- c(E1,E2,E3,E4,E5)};
                      (R[1] < R[2]) & (R[5] < R[4]) & (R[3] < R[1]) & (R[3] < R[5]) &
-                     techchart_abs(R[1] - (R[1]+R[5])/2) < tolerance * (R[1]+R[5])/2 &
-                     techchart_abs(R[5] - (R[1]+R[5])/2) < tolerance * (R[1]+R[5])/2 &
-                     techchart_abs(R[2] - (R[2]+R[4])/2) < tolerance * (R[2]+R[4])/2 &
-                     techchart_abs(R[4] - (R[2]+R[4])/2) < tolerance * (R[2]+R[4])/2
+                     abs(R[1] - (R[1]+R[5])/2) < tolerance * (R[1]+R[5])/2 &
+                     abs(R[5] - (R[1]+R[5])/2) < tolerance * (R[1]+R[5])/2 &
+                     abs(R[2] - (R[2]+R[4])/2) < tolerance * (R[2]+R[4])/2 &
+                     abs(R[4] - (R[2]+R[4])/2) < tolerance * (R[2]+R[4])/2
                      ")
   length <- 5
   start <- -1
