@@ -89,7 +89,7 @@ filter_lines <- function(xlines, imppts, flag=1, ptheta=0.25, pscore=0.3,
   xlines$xtheta <- xlines$theta - 90
   # ... and eliminate near-vertical lines
   if(!is.na(ptheta)){
-    xlines <- xlines[abs(cos(xlines$xtheta*pi/180))>ptheta,]
+    xlines <- xlines[techchart_abs(cos(xlines$xtheta*pi/180))>ptheta,]
   }
 
   # return if too few lines left
