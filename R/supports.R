@@ -294,7 +294,7 @@ find.supports <- function(x, tolerance=0.02, strength=3, maxline=10,lookback=20)
     lastval <- as.matrix(x)[NROW(x),1]
   }
 
-  sups$dist <- abs(sups$value - lastval)
+  sups$dist <- techchart_abs(sups$value - lastval)
   if(NROW(sups) > maxline){
     sups <- sups[order(sups$dist),]
     sups <- sups[1:maxline,]
